@@ -73,13 +73,25 @@ private[sql] class DiskPartition (
   private var inputClosed: Boolean = false
 
   /**
-    * This method inserts a new row into this particular partition. If the size of the partition
+    * This method insert
+s a new row into this particular partition. If the size of the partition
     * exceeds the blockSize, the partition is spilled to disk.
     *
     * @param row the [[Row]] we are adding
     */
+
+
   def insert(row: Row) = {
-    /* IMPLEMENT THIS METHOD */
+    if (inputClosed) 
+       throw new SparkException("Error: input is closed, cannot insert.\n")
+
+     
+    data.add(row)
+      writtenToDisk = false 
+      /* will be changed into "true" in spillPartitionToDisk if the data size too big to fit in RAM */
+
+      if (measurePartitionSize() > blockSize)
+      	 spillPartitionToDisk()
   }
 
   /**
@@ -122,13 +134,13 @@ private[sql] class DiskPartition (
       var byteArray: Array[Byte] = null
 
       override def next() = {
-        /* IMPLEMENT THIS METHOD */
-        null
+        currentIterator.next()
       }
 
       override def hasNext() = {
-        /* IMPLEMENT THIS METHOD */
-        false
+      	if (currentIterator == null) false
+        else if (currentIterator.hasnext) true
+        else false
       }
 
       /**
@@ -152,7 +164,13 @@ private[sql] class DiskPartition (
     * also be closed.
     */
   def closeInput() = {
-    /* IMPLEMENT THIS METHOD */
+    if (!writtenToDisk) { /* if any data has not been written to the disk yet, should be written */
+       spillPartitionToDisk()
+       data.clear()
+    }    
+
+    outStream.close()
+    /* the outstream should also be closed */
     inputClosed = true
   }
 
