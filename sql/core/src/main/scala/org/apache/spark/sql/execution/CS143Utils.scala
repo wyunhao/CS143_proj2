@@ -1,4 +1,4 @@
-/*
+https://github.com/wyunhao/CS143_proj2/tree/master/sql/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -129,6 +129,9 @@ object CS143Utils {
     */
   def getUdfFromExpressions(expressions: Seq[Expression]): ScalaUdf = {
     /* IMPLEMENT THIS METHOD */
+    for(expr <- expressions.reverse)
+        if(expr.inInstanceOf(ScalaUdf])
+	    return expr.asInstanceOf[ScalaUdf]
     null
   }
 
