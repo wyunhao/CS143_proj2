@@ -1,4 +1,4 @@
-https://github.com/wyunhao/CS143_proj2/tree/master/sql/*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -130,7 +130,7 @@ object CS143Utils {
   def getUdfFromExpressions(expressions: Seq[Expression]): ScalaUdf = {
     /* IMPLEMENT THIS METHOD */
     for(expr <- expressions.reverse)
-        if(expr.inInstanceOf(ScalaUdf])
+        if(expr.inInstanceOf(ScalaUd))
 	    return expr.asInstanceOf[ScalaUdf]
     null
   }
@@ -243,7 +243,7 @@ object CachingIteratorGenerator {
 	val post_row = postUdfProjection(row)
 
 	// return
-	Row.fromSeq(pre_row ++ udf_row ++ post_row
+	Row.fromSeq(pre_row ++ udf_row ++ post_row)
 	}
 	else
 	    null
