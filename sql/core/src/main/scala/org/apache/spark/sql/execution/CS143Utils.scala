@@ -130,7 +130,7 @@ object CS143Utils {
   def getUdfFromExpressions(expressions: Seq[Expression]): ScalaUdf = {
     /* IMPLEMENT THIS METHOD */
     for(expr <- expressions.reverse)
-        if(expr.inInstanceOf(ScalaUd))
+        if(expr.isInstanceOf(ScalaUd))
 	    return expr.asInstanceOf[ScalaUdf]
     null
   }
