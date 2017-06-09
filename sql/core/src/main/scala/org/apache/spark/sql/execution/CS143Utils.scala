@@ -130,7 +130,7 @@ object CS143Utils {
   def getUdfFromExpressions(expressions: Seq[Expression]): ScalaUdf = {
     /* IMPLEMENT THIS METHOD */
     for(expr <- expressions.reverse)
-        if(expr.isInstanceOf(ScalaUd))
+        if(expr.isInstanceOf(ScalaUdf))
 	    return expr.asInstanceOf[ScalaUdf]
     null
   }
@@ -235,7 +235,7 @@ object CachingIteratorGenerator {
 	    // Cache the result
 	    val key = cacheKeyProjection(row)
 	    if(!cache.containsKey(key)){
-	    val row_new = unfProject(row)
+	    val row_new = ufProject(row)
 	    cache.put(key, row_new)
 	    }
 	val udf_row = cache.get(key)
