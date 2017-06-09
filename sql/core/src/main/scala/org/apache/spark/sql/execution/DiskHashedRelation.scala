@@ -150,7 +150,8 @@ s a new row into this particular partition. If the size of the partition
       private[this] def fetchNextChunk(): Boolean = {
         if (chunkSizeIterator.isEmpty) false // return true unless the iterator is empty
 	else {
-	     byteArray = CS143Utils.getNextChunkBytes(inStream, chunkSize, byteArray) // fetch the next chunk
+	     byteArray = CS143Utils.getNextChunkBytes(inStream, chunkSizeIterator.next(), byteArray) 
+	     // fetch the next chunk
 	     currentIterator = CS143Utils.getListFromBytes(byteArray).iterator.asScala 
 	     // update the current Iterator by converting the bytes into [Row] list
 	     // use the "asScala" to convert the Java collection into Scala collection
@@ -214,7 +215,7 @@ private[sql] object DiskHashedRelation {
     
     val partitions: Array[DiskPartition] = new Array[DiskPartition](size)
     for (i <- 0 until size)
-    	partitions(i) = new DiskPartition("DiskPart"+i.toString(), blocksize)
+    	partitions(i) = new DiskPartition("DiskPart"+i.toString(), blockSize)
 
     while (input.hasNext) {
     	var r = input.next
@@ -223,7 +224,7 @@ private[sql] object DiskHashedRelation {
     }
 
     for (partition <- partitions)
-    	parition.closeInput()
+    	partition.closeInput()
 
     new GeneralDiskHashedRelation(partitions)
   }
