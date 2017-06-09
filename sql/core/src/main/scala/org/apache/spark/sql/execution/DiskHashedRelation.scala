@@ -52,12 +52,12 @@ protected [sql] final class GeneralDiskHashedRelation(partitions: Array[DiskPart
   extends DiskHashedRelation with Serializable {
 
   override def getIterator() = {
-    /* IMPLEMENT THIS METHOD */
-    null
+    partitions.iterator
   }
 
   override def closeAllPartitions() = {
-    /* IMPLEMENT THIS METHOD */
+    for (partition <- partitions) // for each partition in the partitions array, close the partition
+    	partition.closePartition()
   }
 }
 
@@ -72,15 +72,13 @@ private[sql] class DiskPartition (
   private var writtenToDisk: Boolean = false
   private var inputClosed: Boolean = false
 
-  /**
+   /**
     * This method insert
 s a new row into this particular partition. If the size of the partition
     * exceeds the blockSize, the partition is spilled to disk.
     *
     * @param row the [[Row]] we are adding
     */
-
-
   def insert(row: Row) = {
     if (inputClosed) 
        throw new SparkException("Error: input is closed, cannot insert.\n")
@@ -94,7 +92,7 @@ s a new row into this particular partition. If the size of the partition
       	 spillPartitionToDisk()
   }
 
-  /**
+   /**
     * This method converts the data to a byte array and returns the size of the byte array
     * as an estimation of the size of the partition.
     *
@@ -104,7 +102,7 @@ s a new row into this particular partition. If the size of the partition
     CS143Utils.getBytesFromList(data).size
   }
 
-  /**
+   /**
     * Uses the [[Files]] API to write a byte array representing data to a file.
     */
   private[this] def spillPartitionToDisk() = {
@@ -139,7 +137,7 @@ s a new row into this particular partition. If the size of the partition
 
       override def hasNext() = {
       	if (currentIterator == null) false
-        else if (currentIterator.hasnext) true
+        else if (currentIterator.hasNext) true
         else false
       }
 
@@ -150,8 +148,14 @@ s a new row into this particular partition. If the size of the partition
         * @return true unless the iterator is empty.
         */
       private[this] def fetchNextChunk(): Boolean = {
-        /* IMPLEMENT THIS METHOD */
-        false
+        if (chunkSizeIterator.isEmpty) false // return true unless the iterator is empty
+	else {
+	     byteArray = CS143Utils.getNextChunkBytes(inStream, chunkSize, byteArray) // fetch the next chunk
+	     currentIterator = CS143Utils.getListFromBytes(byteArray).iterator.asScala 
+	     // update the current Iterator by converting the bytes into [Row] list
+	     // use the "asScala" to convert the Java collection into Scala collection
+	     true
+	} 
       }
     }
   }
@@ -207,7 +211,20 @@ private[sql] object DiskHashedRelation {
               keyGenerator: Projection,
               size: Int = 64,
               blockSize: Int = 64000) = {
-    /* IMPLEMENT THIS METHOD */
-    null
+    
+    val partitions: Array[DiskPartition] = new Array[DiskPartition](size)
+    for (i <- 0 until size)
+    	partitions(i) = new DiskPartition("DiskPart"+i.toString(), blocksize)
+
+    while (input.hasNext) {
+    	var r = input.next
+	var hash_value = keyGenerator(r).hashCode() % size
+	partitions(hash_value).insert(r)
+    }
+
+    for (partition <- partitions)
+    	parition.closeInput()
+
+    new GeneralDiskHashedRelation(partitions)
   }
 }
