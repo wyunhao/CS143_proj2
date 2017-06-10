@@ -1,19 +1,3 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.apache.spark.sql.execution
 
 import java.io._
@@ -73,8 +57,7 @@ private[sql] class DiskPartition (
   private var inputClosed: Boolean = false
 
    /**
-    * This method insert
-s a new row into this particular partition. If the size of the partition
+    * This method inserts a new row into this particular partition. If the size of the partition
     * exceeds the blockSize, the partition is spilled to disk.
     *
     * @param row the [[Row]] we are adding
@@ -82,15 +65,14 @@ s a new row into this particular partition. If the size of the partition
   def insert(row: Row) = {
     if (inputClosed) 
        throw new SparkException("Error: input is closed, cannot insert.\n")
-
      
-    data.add(row)
-      writtenToDisk = false 
+    data.add(row) 
+    writtenToDisk = false 
       /* will be changed into "true" in spillPartitionToDisk if the data size too big to fit in RAM */
 
       if (measurePartitionSize() > blockSize)
-      	 spillPartitionToDisk()
-  }
+      	  spillPartitionToDisk()
+ }
 
    /**
     * This method converts the data to a byte array and returns the size of the byte array
@@ -138,7 +120,7 @@ s a new row into this particular partition. If the size of the partition
       override def hasNext() = {
       	if (currentIterator == null) false
         else if (currentIterator.hasNext) true
-        else false
+        else fetchNextChunk()
       }
 
       /**
@@ -153,8 +135,8 @@ s a new row into this particular partition. If the size of the partition
 	     byteArray = CS143Utils.getNextChunkBytes(inStream, chunkSizeIterator.next(), byteArray) 
 	     // fetch the next chunk
 	     currentIterator = CS143Utils.getListFromBytes(byteArray).iterator.asScala 
-	     // update the current Iterator by converting the bytes into [Row] list
-	     // use the "asScala" to convert the Java collection into Scala collection
+             // update the current Iterator by converting the bytes into [Row] list
+             // use the "asScala" to convert the Java collection into Scala collection
 	     true
 	} 
       }
@@ -169,11 +151,12 @@ s a new row into this particular partition. If the size of the partition
     * also be closed.
     */
   def closeInput() = {
-    if (!writtenToDisk) { /* if any data has not been written to the disk yet, should be written */
+    if (!data.isEmpty()) { /* if any data has not been written to the disk yet, should be written */
        spillPartitionToDisk()
        data.clear()
     }    
 
+    outStream.flush()
     outStream.close()
     /* the outstream should also be closed */
     inputClosed = true
@@ -212,15 +195,15 @@ private[sql] object DiskHashedRelation {
               keyGenerator: Projection,
               size: Int = 64,
               blockSize: Int = 64000) = {
-    
+ 
     val partitions: Array[DiskPartition] = new Array[DiskPartition](size)
     for (i <- 0 until size)
     	partitions(i) = new DiskPartition("DiskPart"+i.toString(), blockSize)
 
     while (input.hasNext) {
-    	var r = input.next
-	var hash_value = keyGenerator(r).hashCode() % size
-	partitions(hash_value).insert(r)
+    	  var r = input.next
+	  var hash_value = keyGenerator(r).hashCode() % size
+	  partitions(hash_value).insert(r)
     }
 
     for (partition <- partitions)

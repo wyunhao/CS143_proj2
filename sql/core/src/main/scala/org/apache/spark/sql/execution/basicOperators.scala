@@ -88,27 +88,32 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
 
   /**
     * This method takes an iterator as an input. It should first partition the whole input to disk.
-    * It should then read each partition from disk and construct do in-memory memoization over each
+    * It should then read each partition from disk and construct do in-memory memorization over each
     * partition to avoid recomputation of UDFs.
     *
     * @param input the input iterator
     * @return the result of applying the projection
     */
+
   def generateIterator(input: Iterator[Row]): Iterator[Row] = {
     // This is the key generator for the course-grained external hashing.
     val keyGenerator = CS143Utils.getNewProjection(projectList, child.output)
 
-    /* IMPLEMENT THIS METHOD */
+     val partitions = DiskHashedRelation.apply(input, keyGenerator).getIterator()
+    //directly apply the function implemented in task 3 to partition the whole input to disk
+    var iter: Iterator[Row] = null
 
     new Iterator[Row] {
       def hasNext() = {
-        /* IMPLEMENT THIS METHOD */
-        false
+        if (iter == null) fetchNextPartition()
+        else {
+	   if (iter.hasNext) true
+	   else fetchNextPartition()	
+	}
       }
 
       def next() = {
-        /* IMPLEMENT THIS METHOD */
-        null
+        iter.next()
       }
 
       /**
@@ -118,12 +123,14 @@ case class PartitionProject(projectList: Seq[Expression], child: SparkPlan) exte
         * @return
         */
       private def fetchNextPartition(): Boolean  = {
-        /* IMPLEMENT THIS METHOD */
-        false
+        if (partitions.hasNext){
+	   iter = CS143Utils.generateCachingIterator(projectList, child.output)(partitions.next().getData())
+	   hasNext()
+	}
+        else false
       }
     }
   }
-
 }
 
 /**

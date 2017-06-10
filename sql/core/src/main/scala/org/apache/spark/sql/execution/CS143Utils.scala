@@ -1,20 +1,3 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.spark.sql.execution
 
 import java.io._
@@ -133,7 +116,7 @@ object CS143Utils {
         if(expr.isInstanceOf[ScalaUdf])
 	    return expr.asInstanceOf[ScalaUdf]
     null
-  }
+ }
 
   /**
     * This function takes a sequence of expressions. If there is no UDF in the sequence of expressions, it does
@@ -230,17 +213,19 @@ object CachingIteratorGenerator {
       }
 
       def next() = {
-        if(hasNext){
+
+       if(hasNext()){
 	    val row = input.next()
 	    // Cache the result
-	    val key = cacheKeyProjection(row)
+	    val key = cacheKeyProjection.apply(row)
 	    if(!cache.containsKey(key)){
-	    val row_new = udfProject(row)
-	    cache.put(key, row_new)
+		val row_new = udfProject.apply(row)
+	    	cache.put(key, row_new)
+		row_new
 	    }
 	val udf_row = cache.get(key)
-	val pre_row = preUdfProjection(row)
-	val post_row = postUdfProjection(row)
+	val pre_row = preUdfProjection.apply(row)
+	val post_row = postUdfProjection.apply(row)
 
 	// return
 	Row.fromSeq(pre_row ++ udf_row ++ post_row)
