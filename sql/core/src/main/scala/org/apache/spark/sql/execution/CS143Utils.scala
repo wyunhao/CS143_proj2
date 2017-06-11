@@ -111,7 +111,7 @@ object CS143Utils {
     * @return
     */
   def getUdfFromExpressions(expressions: Seq[Expression]): ScalaUdf = {
-    /* IMPLEMENT THIS METHOD */
+      //done  
     for(expr <- expressions.reverse)
         if(expr.isInstanceOf[ScalaUdf])
 	    return expr.asInstanceOf[ScalaUdf]
@@ -168,8 +168,12 @@ object CS143Utils {
     * @return true if the addition of a new record will make the table grow beyond the allowed size
     */
   def maybeSpill[K, V](collection: SizeTrackingAppendOnlyMap[K, V], allowedMemory: Long): Boolean = {
-    /* IMPLEMENT THIS METHOD */
-    false
+    var estimateSize = collection.estimateSize()
+
+    if ( allowedMemory <= 2 * estimateSize ) 
+       true
+    else 
+    	 false
   }
 }
 
@@ -253,13 +257,16 @@ object AggregateIteratorGenerator {
       val postAggregateProjection = CS143Utils.getNewProjection(resultExpressions, inputSchema)
 
       def hasNext() = {
-        /* IMPLEMENT THIS METHOD */
-        false
+        input.hasNext
       }
 
       def next() = {
-        /* IMPLEMENT THIS METHOD */
-        null
+      	val (row, aggregate_function) = input.next()
+	
+	val aggregate_res = new GenericMutableRow(1)
+	aggregate_res(0) = aggregate_function.eval()
+
+	postAggregateProjection(new JoinedRow4(aggregate_res, row))
       }
     }
   }
