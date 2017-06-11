@@ -58,7 +58,7 @@ case class SpillableAggregate(
 		    case a: AggregateExpression => 
 		    	 ComputedAggregate (a, BindReferences.bindReference(a, child.output), 
 			 AttributeReference(s"aggResult:$a", a.dataType, a.nullable)())
-		}
+		}//compute the aggregate result for each group 
   }.toArray
 
 
@@ -114,33 +114,28 @@ case class SpillableAggregate(
     def initSpills(): Array[DiskPartition]  = {
       
       val partition_arr: Array[DiskPartition] = new Array[DiskPartition](numPartitions)
-
+      //range from 0 to (numPartitions-1)
       for (i <- 0 until numPartitions) {
         partition_arr(i) = new DiskPartition(i.toString(), 0)
       }
-      
       partition_arr
     }
 
     val spills = initSpills()
 
     new Iterator[Row] {
-      var aggregateResult: Iterator[Row] = aggregate()
+      var agg_res: Iterator[Row] = aggregate()
       val dp_iter = spills.iterator
 
       def hasNext() = {
-      	if(aggregateResult.hasNext) {
+      	if(agg_res.hasNext || (dp_iter.hasNext && fetchSpill())) {
           true
-        } else {
-          if(dp_iter.hasNext && fetchSpill())
-            true
-          else 
-            false
-        }
+        } 
+	else false
       }
 
       def next() = {
-        aggregateResult.next()
+        agg_res.next()
       }
 
       /**
@@ -156,16 +151,17 @@ case class SpillableAggregate(
           var agg = currentAggregationTable(gp)
 
           if (agg == null) {
-            if (CS143Utils.maybeSpill(currentAggregationTable, memorySize)) { // spill to disk
+            if (CS143Utils.maybeSpill(currentAggregationTable, memorySize)) {
               spillRecord(r)
-            } else {
+            }//spill the data to disk 
+	    else {
               agg = newAggregatorInstance()
               currentAggregationTable.update(gp.copy(), agg)
-            }
+            }//to memory
           } 
 
-          if(agg != null) // check again if the aggregator is null. for Task 6
-            agg.update(r)
+          if(agg != null)
+            agg.update(r) //can be ignored, only for double-checked
 
         } // end of while
 
@@ -204,16 +200,13 @@ case class SpillableAggregate(
       private def fetchSpill(): Boolean  = {
         while (!data.hasNext && dp_iter.hasNext) {
           data = dp_iter.next.getData()
-        }
+        } 
 
-        if (data.hasNext) {
-          // clear Aggregation Table and aggregateResult
+        if (data.hasNext) { // aggregate the result
           currentAggregationTable = new SizeTrackingAppendOnlyMap[Row, AggregateFunction]
-          aggregateResult = aggregate()
+          agg_res = aggregate()
           true
-        } else {
-          false
-        }
+        } else false
       }
     }
   }

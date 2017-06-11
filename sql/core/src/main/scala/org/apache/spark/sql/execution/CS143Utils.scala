@@ -168,12 +168,8 @@ object CS143Utils {
     * @return true if the addition of a new record will make the table grow beyond the allowed size
     */
   def maybeSpill[K, V](collection: SizeTrackingAppendOnlyMap[K, V], allowedMemory: Long): Boolean = {
-    var estimateSize = collection.estimateSize()
-
-    if ( allowedMemory <= 2 * estimateSize ) 
-       true
-    else 
-    	 false
+    if ( allowedMemory <= 2 * collection.estimateSize())  true
+    else false
   }
 }
 
@@ -261,12 +257,12 @@ object AggregateIteratorGenerator {
       }
 
       def next() = {
-      	val (row, aggregate_function) = input.next()
+      	val (r, agg_func) = input.next()
 	
-	val aggregate_res = new GenericMutableRow(1)
-	aggregate_res(0) = aggregate_function.eval()
+	val agg_res = new GenericMutableRow(1)
+	agg_res(0) = agg_func.eval()
 
-	postAggregateProjection(new JoinedRow4(aggregate_res, row))
+	postAggregateProjection(new JoinedRow4(agg_res, r))
       }
     }
   }
